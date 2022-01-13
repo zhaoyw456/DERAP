@@ -187,18 +187,17 @@ def AE_train(x,y,batch_size):
     from keras.layers import Input, Dense
     import keras as ks
     ks.backend.clear_session()
-    input = Input(shape=(x.shape[1],))
+    input_dim = x.shape[1]
+    input = Input(shape=(input_dim,))
 
-    h = Dense(50, kernel_constraint=ks.constraints.NonNeg(), kernel_regularizer=ks.regularizers.l1(0.001))(input)
+    encoded = Dense(50, kernel_constraint=ks.constraints.NonNeg(), kernel_regularizer=ks.regularizers.l1(0.001))(input)
+    decoded = Dense(input_dim, activation='relu')(encoded)
 
-    final_1 = Dense(1,activation = 'sigmoid')(h)
-    model = Model(inputs=input, outputs=final_1)
-    model.compile(optimizer='adam',
-                  loss='binary_crossentropy'
-                  )
-    model.fit(x, y, batch_size=batch_size, epochs=50, verbose=0, shuffle=True,
-              )
-    t = model.get_layer('dense_1')
+    autoencoder = Model(inputs=input, outputs=decoded)
+    autoencoder.compile(optimizer='adam', loss='mse')
+    autoencoder.fit(x, x, batch_size=batch_size, epochs=50, verbose=0, shuffle=True,
+                    )
+    t = autoencoder.get_layer('dense_1')
 
     w = t.get_weights()[0]
     w[np.isnan(w)] = 0
